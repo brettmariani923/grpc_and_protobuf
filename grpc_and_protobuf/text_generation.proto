@@ -1,0 +1,57 @@
+﻿syntax = "proto3";
+
+package grpc_and_protobuf;
+
+option csharp_namespace = "grpc_and_protobuf";
+
+// ===========================
+//  TEXT GENERATION SERVICE
+// ===========================
+service TextGeneration {
+  // Non-streaming (returns full output)
+  rpc Generate(GenerateRequest) returns (GenerateResponse);
+
+  // Streaming (returns tokens as they generate)
+  rpc GenerateStream(GenerateRequest) returns (stream GenerateStreamResponse);
+}
+
+// ===========================
+//  REQUEST OBJECT
+// ===========================
+message GenerateRequest {
+  string model = 1;                           // "gpt-4", "llama-3", etc.
+  string prompt = 2;                          // User prompt or message
+  int32 max_tokens = 3;                       // Max output
+  float temperature = 4;                      // Randomness
+  float top_p = 5;                            // Nucleus sampling
+  repeated string stop = 6;                   // Stop sequences
+  map<string, string> metadata = 7;           // Custom headers / tags
+}
+
+// ===========================
+//  FULL RESPONSE
+// ===========================
+message GenerateResponse {
+  string content = 1;                         // Full AI output
+  Usage usage = 2;                            // Token counts
+  string finish_reason = 3;                   // "stop", "max_tokens", etc.
+}
+
+// ===========================
+//  STREAMING RESPONSE
+// ===========================
+message GenerateStreamResponse {
+  string token = 1;                           // One generated token
+  bool is_final = 2;                          // True when done
+  Usage usage = 3;                            // Final usage only sent at end
+  string finish_reason = 4;                   // Reason for stopping
+}
+
+// ===========================
+//  TOKEN USAGE
+// ===========================
+message Usage {
+  int32 prompt_tokens = 1;
+  int32 completion_tokens = 2;
+  int32 total_tokens = 3;
+}
