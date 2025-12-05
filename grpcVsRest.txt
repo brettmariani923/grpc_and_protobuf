@@ -1,0 +1,138 @@
+﻿COMPARE AND CONTRAST TO HTTP+JSON
+
+The Big Picture:
+
+gRPC replaces HTTP+JSON with HTTP/2 + Protobuf + auto-generated code.
+
+Instead of manually building HTTP requests and parsing JSON, both client and server use an auto-generated strongly typed API from a .proto file.
+
+
+1. You define an API in a .proto file
+
+	syntax = "proto3";
+
+	package AI.Proto;
+
+	service TextGenerationService {
+	  rpc Generate(GenerateRequest) returns (GenerateResponse);
+	}
+
+	message GenerateRequest {
+	  string model = 1;
+	  string prompt = 2;
+	}
+
+	message GenerateResponse {
+	  string text = 1;
+	}
+
+This file defines:
+
+The service
+
+The method
+
+The request type
+
+The response type
+
+
+2. The gRPC tools generate code from the .proto
+
+When you build your project:
+
+C# classes for request/response types
+
+A C# client
+
+A C# server base class
+
+are automatically generated.
+
+For example, the codegen produces:
+
+Request class
+
+	public sealed partial class GenerateRequest : IMessage<GenerateRequest> {
+		public string Model { get; set; }
+		public string Prompt { get; set; }
+	}
+
+Server base class
+
+	public abstract class TextGenerationServiceBase : BindableService {
+		public virtual Task<GenerateResponse> Generate(GenerateRequest request, ServerCallContext context);
+	}
+
+Client class
+
+	public class TextGenerationServiceClient {
+    public virtual Task<GenerateResponse> GenerateAsync(GenerateRequest request);
+	}
+
+
+They appear under obj → Debug → protobuf → ...
+Only generated in the server app unless you explicitly add the .proto to the client app too.
+
+3. The client does not manually send HTTP JSON
+
+There is no JSON.
+
+The client just calls the generated method as if it were a local function:
+
+	var channel = GrpcChannel.ForAddress("https://localhost:5001");
+
+	var client = new TextGenerationService.TextGenerationServiceClient(channel);
+
+	var request = new GenerateRequest {
+		Model = "gpt-4",
+		Prompt = "Hello"
+	};
+
+	var response = await client.GenerateAsync(request);
+
+	Console.WriteLine(response.Text);
+
+What actually happens under the hood:
+
+- The request is serialized into binary protobuf
+- Sent over HTTP/2
+- Received by the server
+- Deserialized back into the request object
+- Handed to your C# handler method
+- Response serialized back to protobuf
+- Sent back as binary
+
+The client sees none of that.
+
+4. The server implements the method
+
+	public class TextGenerationServiceImpl : TextGenerationService.TextGenerationServiceBase
+	{
+		public override Task<GenerateResponse> Generate(GenerateRequest request, ServerCallContext context)
+		{
+			return Task.FromResult(new GenerateResponse {
+				Text = $"You said: {request.Prompt}"
+			});
+		}
+	}
+
+The server's job is just to implement the logic — not to parse input or format output.
+
+How JSON APIs Compare to gRPC
+-----------------------------
+
+Step               | JSON API                               | gRPC API
+-------------------|-----------------------------------------|---------------------------------------------
+Definition         | You invent your own REST shape          | .proto defines everything
+Request format     | JSON string                             | Protobuf binary
+Transport          | HTTP/1.1                                | HTTP/2
+Client call        | Manual HttpClient calls                 | Auto-generated client method calls
+Parsing            | Developer parses JSON manually          | Done automatically (strongly typed)
+Speed              | Slower                                  | Very fast (binary)
+Streaming          | Hard                                    | Built-in (server, client, or bidirectional)
+
+
+In one sentence
+
+With gRPC, the client calls your API like a normal C# method, and protobuf handles all networking and serialization behind the scenes.
