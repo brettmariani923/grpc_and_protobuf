@@ -9,11 +9,70 @@ option csharp_namespace = "AI.Proto";
 // ===========================
 service TextGeneration {
   // Non-streaming (returns full output)
-  rpc Generate(GenerateRequest) returns (GenerateResponse);
+  rpc Generate(GenerateRequest) returns (GenerateResponse); //will return big block of text once its finished
 
   // Streaming (returns tokens as they generate)
-  rpc GenerateStream(GenerateRequest) returns (stream GenerateStreamResponse);
+  rpc GenerateStream(GenerateRequest) returns (stream GenerateStreamResponse); //like chat gpt, where each letter or word shows up as it generates
 }
+
+//The numbers below represent field tags — they are part of how Protocol Buffers (protobuf) works.
+//They are not indexes, array positions, or ordering indicators.
+//They are binary identifiers used during serialization. 
+
+//In protobuf, every field needs a unique numeric tag.
+//These numbers determine:
+//How data is encoded into the binary protobuf format
+//How the recipient decodes the message
+//Backward & forward compatibility
+//they are required.
+
+//Why numbers instead of names?
+//Because protobuf messages are transmitted as binary, not JSON.
+//Binary format can't store field names efficiently, so protobuf uses:
+
+//field tag number
+
+//wire type
+
+//value
+
+//Each field turns into something like:
+//<field 1>: "gpt-4"
+//<field 2>: "Write me a poem"
+//<field 3>: 200
+//...
+
+//This makes it super compact and fast.
+
+//Why must they be unique and never changed?
+
+//Because once clients depend on your schema, you must not change a tag number.
+
+//If you rename a field: ✔ safe
+//If you reorder fields: ✔ safe
+//If you change a tag number: ❌ breaks every client
+
+//Because the binary data would decode incorrectly.
+
+//Why is this useful?
+
+//It allows protobuf to be:
+
+//blazing fast
+
+//forward/backward compatible
+
+//language-independent
+
+//very compact over the wire
+
+//That’s why gRPC is much faster than REST + JSON.
+
+//The numbers are field IDs used in protobuf's binary encoding.
+//they identify fields at runtime.
+//They must be unique and never changed.
+
+//So we are just defining these values with numbers, and the numbers are used by protobuf instead of the names
 
 // ===========================
 //  REQUEST OBJECT
@@ -55,3 +114,5 @@ message Usage {
   int32 completion_tokens = 2;
   int32 total_tokens = 3;
 }
+
+

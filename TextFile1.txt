@@ -1,0 +1,106 @@
+Your .proto file becomes the contract for a remote API.
+From that contract, .NET automatically generates:
+
+
+1. Strongly-typed C# client classes
+
+These allow your C# code to call your AI servicelike a normal method.
+
+    var client = new TextGeneration.TextGenerationClient(channel);
+
+    var reply = await client.GenerateTextAsync(new TextRequest
+    {
+        Prompt = "Hello world"
+    });
+
+No HTTP routes.
+No JSON.
+Just pure RPC calls.
+
+
+2. Strongly-typed C# server base classes
+
+The .proto file generated a service base class you override:
+
+    public class TextGenerationService : TextGeneration.TextGenerationBase
+    {
+        public override Task<TextReply> GenerateText(TextRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(new TextReply
+            {
+                Text = "Generated text for: " + request.Prompt
+            });
+        }
+    }
+
+You write only the logic — the protobuf layer, serialization, and transport are already done.
+
+
+3. Auto-serialization using Protobuf
+
+Your messages (e.g., TextRequest, TextReply) are:
+
+    -binary serialized (super fast)
+
+    -strongly typed
+
+    -validated at compile time
+
+No JSON performance penalty.
+
+
+4. Built-in full duplex streaming (if used)
+
+If your .proto defines streaming:
+
+    rpc StreamText (TextRequest) returns (stream TextReply);
+
+You can stream tokens as they generate — exactly how ChatGPT works internally.
+
+
+5. Ability to connect any language
+
+Since it’s real gRPC any language can act as a client:
+
+    -Python
+
+    -Java
+
+    -Go
+
+    -Node.js
+
+    -Rust
+
+    -C++
+
+    -Swift
+
+All can talk to your .NET service using the same .proto contract.
+
+
+6. Generated classes appear in:
+
+    /obj/Debug/net8.0/generated/
+        ai.proto
+        text_generationGrpc.cs
+        text_generation.cs
+
+You don't check these into Git. They are regenerated on every build.
+
+
+Its basically a full AI microservice architecture
+
+Your gRPC service can:
+
+    -receive prompts
+
+    -generate text
+
+    -stream output
+
+    -scale independently
+
+    -communicate with other services
+
+This is the exact pattern real AI systems use (OpenAI, Anthropic, Google Gemini, etc. all expose protobuf/gRPC schemas internally).
