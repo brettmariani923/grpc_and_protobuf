@@ -1,8 +1,8 @@
 ﻿syntax = "proto3";
 
-package grpc_and_protobuf;
+package grpcAndProtobuf;
 
-option csharp_namespace = "grpc_and_protobuf";
+option csharp_namespace = "AI.Proto";
 
 // ===========================
 //  TEXT GENERATION SERVICE
